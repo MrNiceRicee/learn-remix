@@ -21,6 +21,22 @@ export async function getPost(slug: string) {
     select: {
       title: true,
       markdown: true,
-    }
+    },
+  });
+}
+
+export async function createPost({
+  title,
+  markdown,
+}: {
+  title: string;
+  markdown: string;
+}) {
+  return prisma.post.create({
+    data: {
+      markdown,
+      title,
+      slug: title.toLowerCase().replace(/ /g, "-"),
+    },
   });
 }
