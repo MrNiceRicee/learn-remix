@@ -12,6 +12,12 @@ export default function PostRoute() {
   return (
     <main>
       <h1>Posts</h1>
+      <Link
+        to="admin"
+        className="relative inline-block rounded-md border-2 border-gray-200 bg-blue-100 p-2 text-sm font-medium text-gray-700 transition duration-300  ease-in-out hover:border-gray-300 hover:bg-blue-300 hover:text-gray-900"
+      >
+        Admin
+      </Link>
       <ul>
         {posts.map((post) => (
           <li key={post.slug}>
