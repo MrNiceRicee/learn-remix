@@ -1,8 +1,10 @@
 import { Form, useActionData, useTransition } from "@remix-run/react";
 import { json, redirect } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@remix-run/server-runtime/dist/router";
 import { createPost } from "~/models/post.server";
 import invariant from "tiny-invariant";
+import { requireAdminUser } from "~/session.server";
 
 type ActionError =
   | {
@@ -11,7 +13,22 @@ type ActionError =
     }
   | undefined;
 
-export const action: ActionFunction = async ({ request }) => {
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+  await requireAdminUser(request);
+  const { slug } = params;
+  if (!slug || typeof slug !== "string") {
+    throw new Error("slug is required");
+  }
+  if (slug === "new") {
+    return json({});
+  }
+  return json({
+    post: null
+  });
+};
+
+export const action: ActionFunction = async ({ request, params }) => {
+  await requireAdminUser(request);
   const data = await request.formData();
   const title = data.get("title");
   const markdown = data.get("markdown");
@@ -29,20 +46,37 @@ export const action: ActionFunction = async ({ request }) => {
   invariant(typeof title === "string", "title must be a string");
   invariant(typeof markdown === "string", "markdown must be a string");
 
-  await createPost({
-    title,
-    markdown,
-  });
+  const { slug } = params;
+  if (slug === "new") {
+    await createPost({
+      title,
+      markdown,
+    });
+  } else {
+    // TODO: update post
+  }
+
   return redirect("/posts/admin");
 };
 
-const ErrorComponent = ({ error }: { error: string }) => (
-  <div className="my-2 rounded-lg bg-[hsl(0,100%,70%)] p-0.5 pl-2">
-    {/* <div className="h-full w-full rounded-md bg-stone-100/80 px-2"> */}
-    <p className="text-md flex gap-1 font-sans font-light text-white">
+const ErrorComponent = ({ error }: { error?: null | string }) => (
+  <div
+    className={`my-2 w-fit min-w-[5rem]
+     rounded-lg bg-[hsl(0,100%,70%)] p-1 px-3 ${
+       error ? "origin-top rotate-0 scale-100" : "scale-y-0"
+     }
+    overflow-hidden transition-transform
+    duration-300 ease-in
+    `}
+  >
+    <p
+      className={`text-md flex gap-1 font-sans font-light text-white
+      ${error ? "translate-x-0" : "translate-y-full"}
+      transition-transform duration-500 ease-out
+    `}
+    >
       {error}
     </p>
-    {/* </div> */}
   </div>
 );
 
@@ -55,25 +89,25 @@ export default function NewPostRoute() {
 
   return (
     <Form method="post" key="new">
-      <p>
-        <label>
+      <p className="font-sans text-sm font-light text-gray-600">
+        <label className="">
           Post Title:
           <input
             type="text"
             name="title"
             style={{
               boxShadow: `
-              inset 0 1px 4px 0 hsl(0 0% 85%),
+              inset 0 1px 4px 0 hsl(0 0% 70%),
               inset 0 1px 0px 0px hsl(0 0% 50%),
-              inset 0 -1px 0px 0px hsl(0 0% 95%)
+              inset 0 -1px 0px 0px hsl(0 0% 80%)
             `,
             }}
-            className="block w-full rounded-md border border-gray-300 bg-stone-50 px-4 py-1 shadow-sm focus:border-gray-600 focus:outline-none focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+            className="block w-full rounded-md border border-none bg-gradient-to-b from-zinc-100 to-zinc-50 px-4 py-1 font-mono focus:ring-1"
           />
         </label>
       </p>
-      {errorData?.title && <ErrorComponent error={errorData.title} />}
-      <p>
+      <ErrorComponent error={errorData?.title} />
+      <p className="font-sans text-sm font-light text-gray-600">
         <label htmlFor="markdown">Markdown:</label>
         <textarea
           id="markdown"
@@ -81,15 +115,15 @@ export default function NewPostRoute() {
           rows={10}
           style={{
             boxShadow: `
-              inset 0 1px 4px 0 hsl(0 0% 85%),
+              inset 0 1px 4px 0 hsl(0 0% 70%),
               inset 0 1px 0px 0px hsl(0 0% 50%),
-              inset 0 -1px 0px 0px hsl(0 0% 95%)
+              inset 0 -1px 0px 0px hsl(0 0% 90%)
             `,
           }}
-          className="block w-full rounded-md border border-gray-300 bg-stone-50 px-4 py-1 font-mono focus:border-gray-600 focus:outline-none focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+          className="block w-full rounded-md border border-none bg-gradient-to-b from-zinc-100 to-zinc-50 px-4 py-1 font-mono focus:outline-none focus:ring-1 focus:ring-zinc-500"
         />
       </p>
-
+      <ErrorComponent error={errorData?.markdown} />
       <div className="mt-2 flex justify-end gap-2">
         <button
           type="submit"
@@ -103,9 +137,7 @@ export default function NewPostRoute() {
           `}
           disabled={isCreating}
         >
-          <span>
-            {isCreating ? "Creating..." : "Create Post"}
-          </span>
+          <span>{isCreating ? "Creating..." : "Create Post"}</span>
           {isCreating && (
             <svg
               className="h-5 w-5 animate-spin text-gray-500"
