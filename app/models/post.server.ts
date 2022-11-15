@@ -22,6 +22,7 @@ export async function getPost(slug: string) {
     select: {
       title: true,
       markdown: true,
+      slug: true,
     },
   });
 }
@@ -35,6 +36,31 @@ export async function createPost({
       markdown,
       title,
       slug: title.toLowerCase().replace(/ /g, "-"),
+    },
+  });
+}
+
+export async function updatePost(
+  slug: string,
+  { title, markdown }: Pick<Post, "title" | "markdown">
+) {
+  return prisma.post.update({
+    where: {
+      slug,
+    },
+    data: {
+      markdown,
+      title,
+      slug: title.toLowerCase().replace(/ /g, "-"),
+      updatedAt: new Date(),
+    },
+  });
+}
+
+export async function deletePost(slug: string) {
+  return prisma.post.delete({
+    where: {
+      slug,
     },
   });
 }

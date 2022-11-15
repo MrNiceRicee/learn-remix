@@ -12,7 +12,6 @@ export default function PostRoute() {
   const { posts } = useLoaderData<typeof loader>();
   const adminUser = useOptionalAdminUser();
 
-
   return (
     <main className="mx-auto max-w-2xl font-light text-gray-700">
       <h1 className="my-6 border-b-2 text-center text-4xl font-bold">Posts</h1>
@@ -29,7 +28,7 @@ export default function PostRoute() {
                   Admin
                 </span>
                 <svg
-                  className="ml-2 inline-block h-4 w-4 -translate-x-1/4 text-gray-400 transition-transform duration-200 ease-in-out group-hover:translate-x-0 group-hover:text-gray-500"
+                  className="ml-2 inline-block h-4 w-4 text-gray-400 transition-transform duration-200 ease-in-out group-hover:translate-x-0 group-hover:text-gray-500"
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
